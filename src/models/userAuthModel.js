@@ -1,25 +1,27 @@
 const { DataTypes } = require("sequelize");
 const { sequelize } = require("../config/database");
 
-const User = sequelize.define(
-  "User",
+const UserAuth = sequelize.define(
+  "UserAuth",
   {
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
     },
-    email: {
-      type: DataTypes.STRING(100),
+    user_id: {
+      type: DataTypes.INTEGER,
       allowNull: false,
       unique: true,
-      validate: {
-        isEmail: true,
-        notEmpty: true,
+      references: {
+        model: "users",
+        key: "id",
       },
+      onDelete: "CASCADE",
+      onUpdate: "CASCADE",
     },
-    name: {
-      type: DataTypes.STRING(100),
+    password_hash: {
+      type: DataTypes.STRING(255),
       allowNull: false,
       validate: {
         notEmpty: true,
@@ -27,10 +29,10 @@ const User = sequelize.define(
     },
   },
   {
-    tableName: "users",
+    tableName: "user_auth",
     timestamps: true,
     underscored: true,
   }
 );
 
-module.exports = User;
+module.exports = UserAuth;

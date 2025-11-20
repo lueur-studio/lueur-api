@@ -12,17 +12,16 @@ const validate = (req, res, next) => {
 };
 
 const createUserValidation = [
-  body("username").trim().notEmpty().isLength({ min: 3, max: 50 }),
   body("email").trim().isEmail().normalizeEmail(),
+  body("name").trim().notEmpty().isLength({ min: 1, max: 100 }),
   body("password").isLength({ min: 6 }),
   validate,
 ];
 
 const updateUserValidation = [
-  body("username").optional().trim().isLength({ min: 3, max: 50 }),
   body("email").optional().trim().isEmail().normalizeEmail(),
-  body("firstName").optional().trim(),
-  body("lastName").optional().trim(),
+  body("name").optional().trim().notEmpty().isLength({ min: 1, max: 100 }),
+  body("password").optional().isLength({ min: 6 }),
   validate,
 ];
 

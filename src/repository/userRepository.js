@@ -1,33 +1,85 @@
-const { User } = require("../models");
+const { User, UserAuth } = require("../models");
 const bcrypt = require("bcrypt");
 
 const userRepository = {
   findAll: async () => {
     return await User.findAll({
-      attributes: { exclude: ["password"] },
+      include: [
+        {
+          model: UserAuth,
+          as: "auth",
+          attributes: [],
+        },
+      ],
     });
   },
 
   findById: async (id) => {
     return await User.findByPk(id, {
-      attributes: { exclude: ["password"] },
+      include: [
+        {
+          model: UserAuth,
+          as: "auth",
+          attributes: [],
+        },
+      ],
     });
   },
 
   create: async (userData) => {
-    if (userData.password) {
-      userData.password = await bcrypt.hash(userData.password, 10);
-    }
-    return await User.create(userData);
+    const { password, ...userInfo } = userData;
+
+    const result = await User.sequelize.transaction(async (t) => {
+      const user = await User.create(userInfo, { transaction: t });
+
+      if (password) {
+        const passwordHash = await bcrypt.hash(password, 10);
+        await UserAuth.create(
+          {
+            user_id: user.id,
+            password_hash: passwordHash,
+          },
+          { transaction: t }
+        );
+      }
+
+      return user;
+    });
+
+    return result;
   },
 
   update: async (id, updateData) => {
     const user = await User.findByPk(id);
     if (!user) return null;
-    if (updateData.password) {
-      updateData.password = await bcrypt.hash(updateData.password, 10);
-    }
-    return await user.update(updateData);
+
+    const { password, ...userInfo } = updateData;
+
+    await User.sequelize.transaction(async (t) => {
+      await user.update(userInfo, { transaction: t });
+
+      if (password) {
+        const passwordHash = await bcrypt.hash(password, 10);
+        const auth = await UserAuth.findOne({ where: { user_id: id } });
+
+        if (auth) {
+          await auth.update(
+            { password_hash: passwordHash },
+            { transaction: t }
+          );
+        } else {
+          await UserAuth.create(
+            {
+              user_id: id,
+              password_hash: passwordHash,
+            },
+            { transaction: t }
+          );
+        }
+      }
+    });
+
+    return user;
   },
 
   delete: async (id) => {

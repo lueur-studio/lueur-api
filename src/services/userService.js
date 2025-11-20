@@ -16,8 +16,7 @@ const userService = {
 
   createUser: async (userData) => {
     const user = await userRepository.create(userData);
-    const { password, ...userWithoutPassword } = user.toJSON();
-    return userWithoutPassword;
+    return user.toJSON();
   },
 
   updateUser: async (id, updateData) => {
@@ -25,8 +24,7 @@ const userService = {
     if (!user) {
       throw new Error("User not found");
     }
-    const { password, ...userWithoutPassword } = user.toJSON();
-    return userWithoutPassword;
+    return user.toJSON();
   },
 
   deleteUser: async (id) => {
