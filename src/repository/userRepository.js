@@ -1,85 +1,50 @@
 const { User, UserAuth } = require("../models");
-const bcrypt = require("bcrypt");
 
 const userRepository = {
   findAll: async () => {
     return await User.findAll({
-      include: [
-        {
-          model: UserAuth,
-          as: "auth",
-          attributes: [],
-        },
-      ],
+      attributes: ["id", "name", "email", "created_at", "updated_at"],
     });
   },
 
   findById: async (id) => {
     return await User.findByPk(id, {
+      attributes: ["id", "name", "email", "created_at", "updated_at"],
+    });
+  },
+
+  findByIdWithAuth: async (id) => {
+    return await User.findByPk(id, {
       include: [
         {
           model: UserAuth,
           as: "auth",
-          attributes: [],
+          required: true,
         },
       ],
     });
   },
 
-  create: async (userData) => {
-    const { password, ...userInfo } = userData;
-
-    const result = await User.sequelize.transaction(async (t) => {
-      const user = await User.create(userInfo, { transaction: t });
-
-      if (password) {
-        const passwordHash = await bcrypt.hash(password, 10);
-        await UserAuth.create(
-          {
-            user_id: user.id,
-            password_hash: passwordHash,
-          },
-          { transaction: t }
-        );
-      }
-
-      return user;
-    });
-
-    return result;
+  findByEmail: async (email) => {
+    return await User.findOne({ where: { email } });
   },
 
   update: async (id, updateData) => {
     const user = await User.findByPk(id);
     if (!user) return null;
 
-    const { password, ...userInfo } = updateData;
+    const { name, email } = updateData;
+    await user.update({ name, email });
 
-    await User.sequelize.transaction(async (t) => {
-      await user.update(userInfo, { transaction: t });
+    return user.toJSON();
+  },
 
-      if (password) {
-        const passwordHash = await bcrypt.hash(password, 10);
-        const auth = await UserAuth.findOne({ where: { user_id: id } });
+  updatePassword: async (userId, newPassword) => {
+    const userAuth = await UserAuth.findOne({ where: { user_id: userId } });
+    if (!userAuth) return null;
 
-        if (auth) {
-          await auth.update(
-            { password_hash: passwordHash },
-            { transaction: t }
-          );
-        } else {
-          await UserAuth.create(
-            {
-              user_id: id,
-              password_hash: passwordHash,
-            },
-            { transaction: t }
-          );
-        }
-      }
-    });
-
-    return user;
+    await userAuth.update({ password_hash: newPassword });
+    return true;
   },
 
   delete: async (id) => {

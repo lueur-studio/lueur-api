@@ -11,25 +11,41 @@ const validate = (req, res, next) => {
   next();
 };
 
-const updateProfileValidation = [
+const signupValidation = [
   body("name")
-    .optional()
     .trim()
     .notEmpty()
-    .withMessage("Name cannot be empty")
+    .withMessage("Name is required")
     .isLength({ min: 2, max: 100 })
     .withMessage("Name must be between 2 and 100 characters"),
   body("email")
-    .optional()
     .trim()
     .notEmpty()
-    .withMessage("Email cannot be empty")
+    .withMessage("Email is required")
     .isEmail()
     .withMessage("Please provide a valid email")
     .normalizeEmail(),
+  body("password")
+    .notEmpty()
+    .withMessage("Password is required")
+    .isLength({ min: 6 })
+    .withMessage("Password must be at least 6 characters long"),
+  validate,
+];
+
+const signinValidation = [
+  body("email")
+    .trim()
+    .notEmpty()
+    .withMessage("Email is required")
+    .isEmail()
+    .withMessage("Please provide a valid email")
+    .normalizeEmail(),
+  body("password").notEmpty().withMessage("Password is required"),
   validate,
 ];
 
 module.exports = {
-  updateProfileValidation,
+  signupValidation,
+  signinValidation,
 };

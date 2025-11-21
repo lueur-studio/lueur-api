@@ -1,39 +1,56 @@
 const userRepository = require("../repository/userRepository");
 
-const userService = {
-  getAllUsers: async () => {
-    const users = await userRepository.findAll();
-    return users;
-  },
+const getCurrentUser = async (userId) => {
+  const user = await userRepository.findById(userId);
 
-  getUserById: async (id) => {
-    const user = await userRepository.findById(id);
-    if (!user) {
-      throw new Error("User not found");
-    }
-    return user;
-  },
+  if (!user) {
+    throw new Error("User not found");
+  }
 
-  createUser: async (userData) => {
-    const user = await userRepository.create(userData);
-    return user.toJSON();
-  },
-
-  updateUser: async (id, updateData) => {
-    const user = await userRepository.update(id, updateData);
-    if (!user) {
-      throw new Error("User not found");
-    }
-    return user.toJSON();
-  },
-
-  deleteUser: async (id) => {
-    const result = await userRepository.delete(id);
-    if (!result) {
-      throw new Error("User not found");
-    }
-    return true;
-  },
+  return user;
 };
 
-module.exports = userService;
+const updateProfile = async (userId, updateData) => {
+  // Check if email is being changed and if it's already in use
+  if (updateData.email) {
+    const user = await userRepository.findById(userId);
+    if (user && updateData.email !== user.email) {
+      const existingUser = await userRepository.findByEmail(updateData.email);
+      if (existingUser) {
+        throw new Error("Email is already in use");
+      }
+    }
+  }
+
+  const updatedUser = await userRepository.update(userId, updateData);
+
+  if (!updatedUser) {
+    throw new Error("User not found");
+  }
+
+  return updatedUser;
+};
+
+const changePassword = async (userId, { currentPassword, newPassword }) => {
+  const user = await userRepository.findByIdWithAuth(userId);
+
+  if (!user || !user.auth) {
+    throw new Error("User not found");
+  }
+
+  const isValidPassword = await user.auth.comparePassword(currentPassword);
+
+  if (!isValidPassword) {
+    throw new Error("Current password is incorrect");
+  }
+
+  await userRepository.updatePassword(userId, newPassword);
+
+  return true;
+};
+
+module.exports = {
+  getCurrentUser,
+  updateProfile,
+  changePassword,
+};
