@@ -22,7 +22,7 @@ const updateProfile = async (userId, updateData) => {
     }
   }
 
-  const updatedUser = await userRepository.update(userId, updateData);
+  const updatedUser = await userRepository.updateProfile(userId, updateData);
 
   if (!updatedUser) {
     throw new Error("User not found");
@@ -49,8 +49,19 @@ const changePassword = async (userId, { currentPassword, newPassword }) => {
   return true;
 };
 
+const deleteProfile = async (userId) => {
+  const deleted = await userRepository.deleteProfile(userId);
+
+  if (!deleted) {
+    throw new Error("User not found");
+  }
+
+  return true;
+};
+
 module.exports = {
   getCurrentUser,
   updateProfile,
   changePassword,
+  deleteProfile,
 };

@@ -54,4 +54,16 @@ router.put(
   })
 );
 
+router.delete(
+  "/me",
+  authenticate,
+  asyncHandler(async (req, res) => {
+    await userService.deleteProfile(req.user.id);
+    res.status(200).json({
+      success: true,
+      message: "Profile deleted successfully",
+    });
+  })
+);
+
 module.exports = router;

@@ -1,12 +1,6 @@
 const { User, UserAuth } = require("../models");
 
 const userRepository = {
-  findAll: async () => {
-    return await User.findAll({
-      attributes: ["id", "name", "email", "created_at", "updated_at"],
-    });
-  },
-
   findById: async (id) => {
     return await User.findByPk(id, {
       attributes: ["id", "name", "email", "created_at", "updated_at"],
@@ -29,7 +23,7 @@ const userRepository = {
     return await User.findOne({ where: { email } });
   },
 
-  update: async (id, updateData) => {
+  updateProfile: async (id, updateData) => {
     const user = await User.findByPk(id);
     if (!user) return null;
 
@@ -47,9 +41,10 @@ const userRepository = {
     return true;
   },
 
-  delete: async (id) => {
+  deleteProfile: async (id) => {
     const user = await User.findByPk(id);
     if (!user) return null;
+
     await user.destroy();
     return true;
   },
