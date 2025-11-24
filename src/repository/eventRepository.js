@@ -1,5 +1,6 @@
-const { Event, EventAccess, User } = require("../models");
+const { Event, EventAccess, User, Photo } = require("../models");
 const { sequelize } = require("../config/database");
+const { deleteFromS3 } = require("../utils/s3");
 
 const createEvent = async (eventData, creatorId) => {
   const transaction = await sequelize.transaction();
@@ -117,14 +118,47 @@ const updateEvent = async (eventId, updateData) => {
 };
 
 const deleteEvent = async (eventId) => {
-  const event = await Event.findByPk(eventId);
+  const transaction = await sequelize.transaction();
 
-  if (!event) {
-    return false;
+  try {
+    const event = await Event.findByPk(eventId);
+
+    if (!event) {
+      await transaction.rollback();
+      return false;
+    }
+
+    const photos = await Photo.findAll({
+      where: { event_id: eventId },
+      attributes: ["id", "image_url"],
+    });
+
+    for (const photo of photos) {
+      try {
+        await deleteFromS3(photo.image_url);
+      } catch (error) {
+        console.error(`Failed to delete photo ${photo.id} from S3:`, error);
+      }
+    }
+
+    await Photo.destroy({
+      where: { event_id: eventId },
+      transaction,
+    });
+
+    await EventAccess.destroy({
+      where: { event_id: eventId },
+      transaction,
+    });
+
+    await event.destroy({ transaction });
+
+    await transaction.commit();
+    return true;
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
   }
-
-  await event.destroy();
-  return true;
 };
 
 // Event Access methods
