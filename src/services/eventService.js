@@ -21,7 +21,6 @@ const getEventById = async (eventId, userId) => {
     throw new Error("Event not found");
   }
 
-  // Check if user has access to this event
   const userAccessLevel = await eventRepository.getUserAccessLevel(
     eventId,
     userId
@@ -35,7 +34,6 @@ const getEventById = async (eventId, userId) => {
 };
 
 const updateEvent = async (eventId, updateData, userId) => {
-  // Check if user has admin access
   const accessLevel = await eventRepository.getUserAccessLevel(eventId, userId);
 
   if (accessLevel === null) {
@@ -46,7 +44,6 @@ const updateEvent = async (eventId, updateData, userId) => {
     throw new Error("Only admins can update event details");
   }
 
-  // Validate event date if being updated
   if (updateData.date) {
     const eventDate = new Date(updateData.date);
     if (eventDate < new Date()) {
@@ -64,7 +61,6 @@ const updateEvent = async (eventId, updateData, userId) => {
 };
 
 const deleteEvent = async (eventId, userId) => {
-  // Check if user is the creator
   const event = await eventRepository.findById(eventId);
 
   if (!event) {
@@ -85,32 +81,27 @@ const deleteEvent = async (eventId, userId) => {
 };
 
 const joinEventByUrl = async (invitationUrl, userId) => {
-  // Find event by invitation URL
   const event = await eventRepository.findByInvitationUrl(invitationUrl);
 
   if (!event) {
     throw new Error("Invalid invitation URL");
   }
 
-  // Check if user already has access
   const existingAccess = await eventRepository.getUserAccessLevel(
     event.id,
     userId
   );
 
   if (existingAccess !== null) {
-    // User already has access, just return the event
     return await eventRepository.findById(event.id, userId);
   }
 
-  // Add user to event with contributor access by default
   await eventRepository.addUserToEvent(event.id, userId, 1);
 
   return await eventRepository.findById(event.id, userId);
 };
 
 const leaveEvent = async (eventId, userId) => {
-  // Check if user is the creator
   const event = await eventRepository.findById(eventId);
 
   if (!event) {
@@ -133,7 +124,6 @@ const leaveEvent = async (eventId, userId) => {
 };
 
 const getEventParticipants = async (eventId, userId) => {
-  // Check if user has access to this event
   const accessLevel = await eventRepository.getUserAccessLevel(eventId, userId);
 
   if (accessLevel === null) {
@@ -149,7 +139,6 @@ const updateUserAccessLevel = async (
   accessLevel,
   requesterId
 ) => {
-  // Check if requester has admin access
   const requesterAccess = await eventRepository.getUserAccessLevel(
     eventId,
     requesterId
@@ -159,13 +148,11 @@ const updateUserAccessLevel = async (
     throw new Error("Only admins can update user access levels");
   }
 
-  // Check if target user is the creator
   const event = await eventRepository.findById(eventId);
   if (event.creator_id === targetUserId) {
     throw new Error("Cannot change access level of the event creator");
   }
 
-  // Update access level
   const updated = await eventRepository.updateUserAccess(
     eventId,
     targetUserId,
@@ -180,7 +167,6 @@ const updateUserAccessLevel = async (
 };
 
 const removeUserFromEvent = async (eventId, targetUserId, requesterId) => {
-  // Check if requester has admin access
   const requesterAccess = await eventRepository.getUserAccessLevel(
     eventId,
     requesterId
@@ -190,7 +176,6 @@ const removeUserFromEvent = async (eventId, targetUserId, requesterId) => {
     throw new Error("Only admins can remove users from events");
   }
 
-  // Check if target user is the creator
   const event = await eventRepository.findById(eventId);
   if (event.creator_id === targetUserId) {
     throw new Error("Cannot remove the event creator");
@@ -209,7 +194,6 @@ const removeUserFromEvent = async (eventId, targetUserId, requesterId) => {
 };
 
 const generateNewInvitationUrl = async (eventId, userId) => {
-  // Check if user has admin access
   const accessLevel = await eventRepository.getUserAccessLevel(eventId, userId);
 
   if (accessLevel !== 0) {

@@ -3,6 +3,7 @@ const User = require("./userModel");
 const UserAuth = require("./userAuthModel");
 const Event = require("./eventModel");
 const EventAccess = require("./eventAccessModel");
+const Photo = require("./photoModel");
 
 const db = {
   sequelize,
@@ -10,6 +11,7 @@ const db = {
   UserAuth,
   Event,
   EventAccess,
+  Photo,
 };
 
 // User - UserAuth (one-to-one)
@@ -66,6 +68,28 @@ Event.hasMany(EventAccess, {
   foreignKey: "event_id",
   as: "eventAccess",
   onDelete: "CASCADE",
+});
+
+// Event - Photo (one-to-many)
+Event.hasMany(Photo, {
+  foreignKey: "event_id",
+  as: "photos",
+  onDelete: "CASCADE",
+});
+Photo.belongsTo(Event, {
+  foreignKey: "event_id",
+  as: "event",
+});
+
+// User - Photo (one-to-many)
+User.hasMany(Photo, {
+  foreignKey: "added_by",
+  as: "photos",
+  onDelete: "CASCADE",
+});
+Photo.belongsTo(User, {
+  foreignKey: "added_by",
+  as: "uploader",
 });
 
 module.exports = db;
