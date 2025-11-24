@@ -134,7 +134,7 @@ const addUserToEvent = async (eventId, userId, accessLevel = 2) => {
   });
 
   if (existingAccess) {
-    throw new Error("User already has access to this event");
+    return existingAccess;
   }
 
   return await EventAccess.create({
